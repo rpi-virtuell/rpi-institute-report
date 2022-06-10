@@ -200,7 +200,6 @@ class InstituteReport
 
     public function create_report_section($entry, $form)
     {
-        $report_parts = array();
         $content = '';
         $institute = get_term_by('id', $entry[23], 'institute');
         $vintage = get_term_by('name', date('Y'), 'vintage');
@@ -210,44 +209,44 @@ class InstituteReport
             $institute_name = "";
         }
 
-        $report = wp_insert_post(array(
-            'post_title' => $form['title'] . " : " . $institute_name . " : " . date('Y'),
-            'post_type' => 'rpi_report',
-            'post_status' => 'publish'
-        ));
 
         if (is_array($form['fields'])) {
             foreach ($form['fields'] as $field) {
                 if (is_a($field, 'GF_Field_Textarea')) {
                     $answer = $entry[$field->id];
-                    $report_part = wp_insert_post(array(
-                        'post_title' => $field->adminLabel . " : " . $institute_name . " : " . date('Y'),
-                        'post_status' => 'publish',
-                        'post_type' => 'rpi_report_section',
-                        'post_content' => $answer,
-                        'meta_input' => array('report_parent' => $report),
-                    ));
-                    $question = get_term_by('name', $field->adminLabel, 'question');
-                    wp_set_object_terms($report_part, $institute->slug, 'institute');
-                    wp_set_object_terms($report_part, $vintage->slug, 'vintage');
-                    wp_set_object_terms($report_part, $question->slug, 'question');
+//                    $report_part = wp_insert_post(array(
+//                        'post_title' => $field->adminLabel . " : " . $institute_name . " : " . date('Y'),
+//                        'post_status' => 'publish',
+//                        'post_type' => 'rpi_report_section',
+//                        'post_content' => $answer,
+//                        'meta_input' => array('report_parent' => $report),
+//                    ));
+//                    $question = get_term_by('name', $field->adminLabel, 'question');
+//                    wp_set_object_terms($report_part, $institute->slug, 'institute');
+//                    wp_set_object_terms($report_part, $vintage->slug, 'vintage');
+//                    wp_set_object_terms($report_part, $question->slug, 'question');
                     $content .= '<!-- wp:lazyblock/report-question {"term_slug":"' . $field->id . '", "lock":{"move":true, "remove":true}} /-->'
                         . '<p>'
                         . $answer
                         . '</p>';
-                    if (!is_wp_error($report_part)) {
-                        $report_parts[] = $report_part;
-                    }
+//                    if (!is_wp_error($report_part)) {
+//                        $report_parts[] = $report_part;
+//                    }
                 }
             }
 
-            wp_update_post(array(
-                'ID' => $report,
+            $report = wp_insert_post(array(
+                'post_title' => $form['title'] . " : " . $institute_name . " : " . date('Y'),
+                'post_type' => 'rpi_report',
                 'post_content' => $content,
-                'meta_input' => array('report_parts' => $report_parts)
             ));
+//            update_post_meta($report, 'report_parts', $report_parts);
             wp_set_object_terms($report, $institute->slug, 'institute');
             wp_set_object_terms($report, $vintage->slug, 'vintage');
+            wp_update_post(array(
+                'ID' => $report,
+                'post_status' => 'publish'));
+
 
         }
     }
@@ -271,7 +270,7 @@ class InstituteReport
 
     public function update_report_sections_with_parent($post_ID, $post, $update)
     {
-        if (get_post_type($post_ID) === 'rpi_report' && is_a($post, 'WP_Post') && $update && !empty($post->post_content)) {
+        if (get_post_type($post_ID) === 'rpi_report' && is_a($post, 'WP_Post') && $update) {
             $report_parts = array();
             $report_blocks = parse_blocks($post->post_content);
             $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
@@ -279,16 +278,17 @@ class InstituteReport
             $institute = reset($terms);
             $terms = wp_get_post_terms($post_ID, 'vintage');
             $vintage = reset($terms);
-            foreach ($report_blocks as $blockkey => $report_block) {
-                if ($report_block['blockname'] === 'lazyblock/report-question') {
-                    if ($report_blocks[$blockkey + 1]['blockname'] === null) {
-                        $question = get_term_by('slug', 'question', $report_block['attrs']['term_slug']);
+            foreach ($report_blocks as $block_key => $report_block) {
+                if ($report_block['blockName'] === 'lazyblock/report-question') {
+                    if ($report_blocks[$block_key + 1]['blockName'] === null) {
+                        $question = get_term_by('slug', $report_block['attrs']['term_slug'], 'question');
                         if (is_a($question, 'WP_Term')) {
                             $report_part = wp_insert_post(array(
+                                'post_author' => $post->post_author,
                                 'post_title' => $question->name . " : " . $institute->name . " : " . $vintage->name,
                                 'post_status' => 'publish',
                                 'post_type' => 'rpi_report_section',
-                                'post_content' => $report_blocks[$blockkey + 1]['innerHTML'],
+                                'post_content' => $report_blocks[$block_key + 1]['innerHTML'],
                                 'meta_input' => array('report_parent' => $post_ID),
                             ));
                             wp_set_object_terms($report_part, $institute->slug, 'institute');
@@ -299,10 +299,7 @@ class InstituteReport
                     }
                 }
             }
-            wp_update_post(array(
-                'ID' => $post_ID,
-                'meta_input' => array('report_parts' => $report_parts)
-            ));
+            update_post_meta($post_ID, 'report_parts', $report_parts);
             foreach ($report_section_ids as $report_section_id) {
                 wp_delete_post($report_section_id);
             }
