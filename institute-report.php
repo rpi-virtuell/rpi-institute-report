@@ -187,8 +187,6 @@ class InstituteReport
     public function create_taxonomies_and_blocks($form, $is_new)
     {
         if (is_array($form['fields'])) {
-
-
             foreach ($form['fields'] as $field) {
                 if (is_a($field, 'GF_Field_Textarea')) {
                     wp_insert_term($field->adminLabel, 'question', array('slug' => $field->id, 'description' => $field->label));
@@ -209,29 +207,14 @@ class InstituteReport
             $institute_name = "";
         }
 
-
         if (is_array($form['fields'])) {
             foreach ($form['fields'] as $field) {
                 if (is_a($field, 'GF_Field_Textarea')) {
                     $answer = $entry[$field->id];
-//                    $report_part = wp_insert_post(array(
-//                        'post_title' => $field->adminLabel . " : " . $institute_name . " : " . date('Y'),
-//                        'post_status' => 'publish',
-//                        'post_type' => 'rpi_report_section',
-//                        'post_content' => $answer,
-//                        'meta_input' => array('report_parent' => $report),
-//                    ));
-//                    $question = get_term_by('name', $field->adminLabel, 'question');
-//                    wp_set_object_terms($report_part, $institute->slug, 'institute');
-//                    wp_set_object_terms($report_part, $vintage->slug, 'vintage');
-//                    wp_set_object_terms($report_part, $question->slug, 'question');
                     $content .= '<!-- wp:lazyblock/report-question {"term_slug":"' . $field->id . '", "lock":{"move":true, "remove":true}} /-->'
                         . '<p>'
                         . $answer
                         . '</p>';
-//                    if (!is_wp_error($report_part)) {
-//                        $report_parts[] = $report_part;
-//                    }
                 }
             }
 
@@ -240,14 +223,11 @@ class InstituteReport
                 'post_type' => 'rpi_report',
                 'post_content' => $content,
             ));
-//            update_post_meta($report, 'report_parts', $report_parts);
             wp_set_object_terms($report, $institute->slug, 'institute');
             wp_set_object_terms($report, $vintage->slug, 'vintage');
             wp_update_post(array(
                 'ID' => $report,
                 'post_status' => 'publish'));
-
-
         }
     }
 
