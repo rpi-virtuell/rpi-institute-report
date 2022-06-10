@@ -20,7 +20,7 @@ class InstituteReport
         add_action('gform_after_submission', array($this, 'create_report_section'), 10, 2);
         add_action('blocksy:loop:card:end', array($this, 'add_parent_report_link'));
         add_action('blocksy:single:content:bottom', array($this, 'add_editing_button_to_report_head'));
-        add_action('edit_post', array($this, 'update_report_sections_with_parent'), 10, 2);
+        add_action('save_post', array($this, 'update_report_sections_with_parent'), 10, 3);
     }
 
     public function register_custom_post_types()
@@ -269,9 +269,9 @@ class InstituteReport
         }
     }
 
-    public function update_report_sections_with_parent($post_ID, $post)
+    public function update_report_sections_with_parent($post_ID, $post, $update)
     {
-        if (get_post_type($post_ID) === 'rpi_report' && is_a($post, 'WP_Post')) {
+        if (get_post_type($post_ID) === 'rpi_report' && is_a($post, 'WP_Post') && $update && !empty($post->post_content)) {
             $report_parts = array();
             $report_blocks = parse_blocks($post->post_content);
             $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
@@ -285,7 +285,7 @@ class InstituteReport
                         $question = get_term_by('slug', 'question', $report_block['attrs']['term_slug']);
                         if (is_a($question, 'WP_Term')) {
                             $report_part = wp_insert_post(array(
-                                'post_title' => $question->name . " : " . $institute->name . " : " . $vintage,
+                                'post_title' => $question->name . " : " . $institute->name . " : " . $vintage->name,
                                 'post_status' => 'publish',
                                 'post_type' => 'rpi_report_section',
                                 'post_content' => $report_blocks[$blockkey + 1]['innerHTML'],
