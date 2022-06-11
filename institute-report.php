@@ -14,8 +14,7 @@ class InstituteReport
 {
     function __construct()
     {
-
-        //TODO: vintage query muss hinzugefügt werden damit automatisch nach dem momentanen Erstellungsjahr gesucht wird
+        //TODO: checkboxes für mehrere Jahrgänge:  rpi_report/?vintage=2023,2022 sucht Inhalte für 2022 und 2023
 
         add_action('init', array($this, 'force_create_report_with_form'));
         add_action('init', array($this, 'register_custom_post_types'));
@@ -29,8 +28,24 @@ class InstituteReport
         add_action('save_post_rpi_report', array($this, 'update_report_sections_with_parent'), 10, 3);
         add_action('trashed_post', array($this, 'delete_report_sections'), 10, 2);
 
+	    add_action( 'pre_get_posts', array($this, 'query_vintage') );
 		add_shortcode('go_to_last_post',  array($this, 'go_to_last_post'));
     }
+
+
+	/**
+	 * pre_get_posts  action
+	 *
+	 * manipuliert die WP_Query args: vintage wird auf aktuelles Jahr gesetzt, sofern nicht in der Url angefordert
+	 *
+	 * @param WP_Query $query
+	 */
+	public function query_vintage(WP_Query $query ){
+		if ( ! is_admin() && $query->is_main_query() && ! $query->get( 'vintage' ) ){
+			$query->set('vintage',date('Y'));
+		}
+	}
+
 
 
 	/**
@@ -135,9 +150,13 @@ class InstituteReport
 
     }
 
+	/**
+	 * edit Rechte für CPT rpi_report setzen
+	 */
     public function add_reporter_role()
     {
 
+		//neue Rolle Reporter:in erstellen
         add_role('reporter', 'Reporter:in');
 
         $role = get_role('reporter');
@@ -454,13 +473,18 @@ class InstituteReport
         if ($update) {
             $report_parts = array();
             $report_blocks = parse_blocks($post->post_content);
-            $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
             $terms = wp_get_post_terms($post_ID, 'institute');
             $institute = reset($terms);
             $terms = wp_get_post_terms($post_ID, 'vintage');
             $vintage = reset($terms);
 
-            $part_content = '';
+	        $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
+	        foreach ($report_section_ids as $report_section_id) {
+		        wp_delete_post($report_section_id, true);
+	        }
+
+
+	        $part_content = '';
 	        $question_slug = '';
 
             foreach ($report_blocks as $block_key => $report_block) {
@@ -502,9 +526,7 @@ class InstituteReport
 	        $report_parts[] = $this->create_report_part($post,$institute,$vintage,$question_slug,$part_content);
 
             update_post_meta($post_ID, 'report_parts', $report_parts);
-            foreach ($report_section_ids as $report_section_id) {
-                wp_delete_post($report_section_id, true);
-            }
+
         }
     }
 
