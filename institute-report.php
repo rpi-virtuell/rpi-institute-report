@@ -15,17 +15,32 @@ class InstituteReport
     function __construct()
     {
 
-        //TODO: vintage query muss hinzugefügt werden damit automatisch nach dem momentanen erstellungs jahr gesucht wird
+        //TODO: vintage query muss hinzugefügt werden damit automatisch nach dem momentanen Erstellungsjahr gesucht wird
 
+        add_action('init', array($this, 'force_create_report_with_form'));
         add_action('init', array($this, 'register_custom_post_types'));
         add_action('admin_init', array($this, 'add_reporter_role'));
         add_action('init', array($this, 'register_taxonomies'));
         add_action('init', array($this, 'create_question_block'));
         add_action('gform_after_save_form', array($this, 'create_taxonomies_and_blocks'), 10, 2);
-        add_action('gform_after_submission', array($this, 'create_report_section'), 10, 2);
-        add_action('blocksy:loop:card:end', array($this, 'add_parent_report_link'));
+        add_action('gform_after_submission', array($this, 'create_report' ), 10, 2);
+        add_action('blocksy:loop:card:start', array($this, 'add_parent_report_link'));
         add_action('blocksy:single:content:bottom', array($this, 'add_editing_button_to_report_head'));
-        add_action('save_post', array($this, 'update_report_sections_with_parent'), 10, 3);
+        add_action('save_post_rpi_report', array($this, 'update_report_sections_with_parent'), 10, 3);
+        add_action('trashed_post', array($this, 'delete_report_sections'), 10, 2);
+
+		add_shortcode('go_to_last_post',  array($this, 'go_to_last_post'));
+    }
+
+
+	/**
+	 * Stellt sicher, das ein Bericht nur über das formular erstellt werden kann
+     * /post-new.php?post_type=rpi_report -> /eingabeformular
+	 */
+    public function force_create_report_with_form(){
+	    if(strpos($_SERVER['SCRIPT_NAME'],'post-new.php')>0 && $_GET['post_type']==='rpi_report'){
+		    wp_redirect(home_url().'/eingabeformular');
+	    }
     }
 
 
@@ -85,12 +100,12 @@ class InstituteReport
          */
 
         $labels = [
-            "name" => __("Berichts Teile", "blocksy"),
-            "singular_name" => __("Berichts Teil", "blocksy"),
+            "name" => __("Fragen", "blocksy"),
+            "singular_name" => __("Frage", "blocksy"),
         ];
 
         $args = [
-            "label" => __("Berichts Teile", "blocksy"),
+            "label" => __("Teilberichte", "blocksy"),
             "labels" => $labels,
             "description" => "",
             "public" => true,
@@ -134,6 +149,7 @@ class InstituteReport
         $role->add_cap('edit_reports');
         $role->add_cap('edit_published_reports');
         $role->add_cap('delete_reports');
+        $role->add_cap('delete_published_reports');
         $role->add_cap('publish_reports');
 
 
@@ -273,11 +289,7 @@ class InstituteReport
             lazyblocks()->add_block(array(
                 'id' => 186,
                 'title' => 'Frage',
-                'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <rect opacity="0.25" width="15" height="15" rx="4" transform="matrix(-1 0 0 1 22 7)" fill="currentColor" />
-    <rect width="15" height="15" rx="4" transform="matrix(-1 0 0 1 17 2)" fill="currentColor" />
-    </svg>
-    ',
+                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>',
                 'keywords' => array(),
                 'slug' => 'lazyblock/report-question',
                 'description' => '',
@@ -358,8 +370,20 @@ class InstituteReport
 
     }
 
-    public function create_report_section($entry, $form)
+	/**
+     * generiert einen Beitrag des CPT rpi_report aus dem Formular
+     *
+	 * @param array $entry  //GravityForm Eintrag
+	 * @param $form         //GravityForm Formular
+	 */
+    public function create_report($entry, $form)
     {
+		$title = $form["title"]?$form["title"]:false;
+
+        if($title !== "Jahresbericht"){
+            return;
+        }
+
         $content = '';
         $institute = get_term_by('id', $entry[23], 'institute');
         $vintage = get_term_by('name', date('Y'), 'vintage');
@@ -380,8 +404,11 @@ class InstituteReport
                 }
             }
 
+			$title .= " : " . $institute_name . " : " . date('Y');
+
+
             $report = wp_insert_post(array(
-                'post_title' => $form['title'] . " : " . $institute_name . " : " . date('Y'),
+                'post_title' => $title,
                 'post_type' => 'rpi_report',
                 'post_content' => $content,
             ));
@@ -410,9 +437,21 @@ class InstituteReport
         }
     }
 
-    public function update_report_sections_with_parent($post_ID, $post, $update)
+	/**
+     * on_save_rpi_repost action
+     *
+     * itteriert alle Blöcke des Berichtes und schreibt jeweils die Frage und alle nachfolgenden Blockinhalte,
+     * die keine Fragen sind, mit Hilfe von create_report_part() in den CPT rpi_report_section
+     *
+	 * @param $post_ID
+	 * @param WP_Post $post
+	 * @param $update
+	 *
+	 * @return void
+	 */
+    public function update_report_sections_with_parent($post_ID, WP_Post $post, $update)
     {
-        if (get_post_type($post_ID) === 'rpi_report' && is_a($post, 'WP_Post') && $update) {
+        if ($update) {
             $report_parts = array();
             $report_blocks = parse_blocks($post->post_content);
             $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
@@ -420,9 +459,22 @@ class InstituteReport
             $institute = reset($terms);
             $terms = wp_get_post_terms($post_ID, 'vintage');
             $vintage = reset($terms);
+
+            $part_content = '';
+	        $question_slug = '';
+
             foreach ($report_blocks as $block_key => $report_block) {
                 if ($report_block['blockName'] === 'lazyblock/report-question') {
-                    if ($report_blocks[$block_key + 1]['blockName'] === null) {
+
+                    //falls vorhanden, Inhalte zur letzten Frage in Teilbericht
+	                $report_parts[] = $this->create_report_part($post,$institute,$vintage,$question_slug,$part_content);
+
+                    $question_slug = $report_block['attrs']['term_slug'];
+                    //Sammlung zurücksetzen
+	                $part_content = '';
+
+                    /*
+	                if ($report_blocks[$block_key + 1]['blockName'] === null) {
                         $question = get_term_by('slug', $report_block['attrs']['term_slug'], 'question');
                         if (is_a($question, 'WP_Term') && !empty(trim(strip_tags($report_blocks[$block_key + 1]['innerHTML'])))) {
                             $report_part = wp_insert_post(array(
@@ -439,14 +491,93 @@ class InstituteReport
                             $report_parts[] = $report_part;
                         }
                     }
+                    */
+                }else{
+                    //Sammle alle Blockinhlate, die unterhalb einer Frage stehen in
+	                $part_content .= $report_block['innerHTML'];
                 }
+
             }
+	        //Inhalte zur letzten Frage in Teilbericht
+	        $report_parts[] = $this->create_report_part($post,$institute,$vintage,$question_slug,$part_content);
+
             update_post_meta($post_ID, 'report_parts', $report_parts);
             foreach ($report_section_ids as $report_section_id) {
                 wp_delete_post($report_section_id, true);
             }
         }
     }
+
+	/**
+	 * trashed_post action
+	 * löscht alle Teilberichte, wenn der Bericht gelöscht wird
+	 *
+	 * @param $post_ID
+	 * @param WP_Post $post
+	 *
+	 * @return void
+	 */
+	public function delete_report_sections($post_ID){
+
+		if('rpi_report' == get_post_type($post_ID)){
+
+			$report_section_ids = get_post_meta($post_ID, 'report_parts', true);
+			foreach ($report_section_ids as $report_section_id) {
+				wp_delete_post($report_section_id, true);
+			}
+		}
+	}
+
+	/**
+     * Schreibt Frage und Antwort in einen den Post_Type rpi_report_section
+     *
+	 * @param WP_Post $report           //Bericht
+	 * @param WP_Term $institute        //Institut Taxononomie
+	 * @param WP_Term $vintage          //Jahrgang Taxononomie
+	 * @param string $question_slug     //slug des WP_TERM Question
+	 * @param string $content           //alle Inhalte unterhalb einer Frage
+	 *
+	 * @return int|WP_Error
+	 */
+    private function create_report_part(WP_Post $report,WP_Term $institute,WP_Term $vintage,$question_slug,$content){
+	    if(!empty(trim(strip_tags($content))) && $report->post_status === 'publish'){
+		    $question = get_term_by('slug',$question_slug,'question');
+		    if (is_a($question, 'WP_Term')){
+
+                $report_part_id = wp_insert_post(array(
+				    'post_author' => $report->post_author,
+				    'post_title' => $question->name . " : " . $institute->name . " : " . $vintage->name,
+				    'post_status' => 'publish',
+				    'post_type' => 'rpi_report_section',
+				    'post_content' => $content,
+				    'meta_input' => array('report_parent' => $report->ID),
+			    ));
+			    wp_set_object_terms($report_part_id, $institute->slug, 'institute');
+			    wp_set_object_terms($report_part_id, $vintage->slug, 'vintage');
+			    wp_set_object_terms($report_part_id, $question->slug, 'question');
+		    }
+	    }
+        return  $report_part_id;
+    }
+
+	/**
+     * @param array $atts //param type set the post_type
+	 *
+	 * @return string  //HTML Link zum letzten Beitrags des Autors
+	 */
+	public function go_to_last_post($atts = array('type'=>'post')){
+
+        $post_type = $atts['type'];
+
+		$posts = get_posts(array(
+			'post_type' => $post_type,
+			'numberposts' =>1,
+			'author'=>get_current_user_id()
+		));
+
+		$post = reset($posts);
+		return '<a class="button" href="'.get_the_permalink($post).'">Beitrag anzeigen</a>';
+	}
 
 }
 
