@@ -17,18 +17,21 @@
 
 /* Manipulation der Printausgabe */
 @media print {
-    .ct-dynamic-filter,.ct-breadcrumbs,#header,.ct-footer{
+    .ct-dynamic-filter,.ct-breadcrumbs,#header{
         display:none;
     }
     [data-layout*="grid"]{
         display:block;
     }
-    [data-prefix="rpi_report_section_archive"] .entry-card{
-        box-shadow:none;
+    .entry-card{
+        box-shadow:none!important;
     }
     .entry-header .page-description{
         font-size:20px!important;
         line-height:25px;
+    }
+    .post-type-archive-rpi_report .entry-header .page-description{
+        display:none;
     }
     .entry-card.rpi_report_section .report-parent-link{
         text-align:center;
@@ -47,4 +50,8 @@
     [data-vertical-spacing*="top"],[data-vertical-spacing*="bottom"]{
         padding:0!important;
     }
+    article>.entry-content {
+        page-break-before: always;
+    }
+
 }
