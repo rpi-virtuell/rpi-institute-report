@@ -1,0 +1,50 @@
+/* Zusätzliches CSS für Blocksy Customizer */
+
+.entry-card.rpi_report_section{
+    display:block;
+}
+.entry-card.rpi_report_section .report-parent-link{
+    text-align:right;
+    margin-top: -20px!important;
+}
+
+.home .wp-block-post.rpi_report.type-rpi_report .wp-block-group{
+    padding:0!important;
+}
+.ct-dynamic-filter[data-type="buttons"] a:first-child:after{
+    content:'e'
+}
+
+/* Manipulation der Printausgabe */
+@media print {
+    .ct-dynamic-filter,.ct-breadcrumbs,#header,.ct-footer{
+        display:none;
+    }
+    [data-layout*="grid"]{
+        display:block;
+    }
+    [data-prefix="rpi_report_section_archive"] .entry-card{
+        box-shadow:none;
+    }
+    .entry-header .page-description{
+        font-size:20px!important;
+        line-height:25px;
+    }
+    .entry-card.rpi_report_section .report-parent-link{
+        text-align:center;
+        margin-bottom:0!important;
+    }
+    .entry-card.rpi_report_section .report-parent-link:before{
+        content:'- '
+    }
+    .entry-card.rpi_report_section .report-parent-link:after{
+        content:'- '
+    }
+    article>.entry-content {
+        max-width:100%!important;
+        width:100%!important;
+    }
+    [data-vertical-spacing*="top"],[data-vertical-spacing*="bottom"]{
+        padding:0!important;
+    }
+}
