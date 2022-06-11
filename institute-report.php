@@ -66,14 +66,16 @@ class InstituteReport
          */
 
         $labels = [
-            "name" => __("Berichte", "blocksy"),
+            "name" => __("Jahresberichte", "blocksy"),
+            "menu_name" => __("Berichte", "blocksy"),
             "singular_name" => __("Bericht", "blocksy"),
+            "archives" => __( "Jahresberichte der Institute", "blocksy" ),
         ];
 
         $args = [
-            "label" => __("Berichte", "blocksy"),
+            "label" => __("Jahresberichte der Institute", "blocksy"),
             "labels" => $labels,
-            "description" => "",
+            "description" => "Zum Ausdrucken bitte die Druckfunktion des Browsers nutzen.",
             "public" => true,
             "publicly_queryable" => true,
             "show_ui" => true,
@@ -115,8 +117,9 @@ class InstituteReport
          */
 
         $labels = [
-            "name" => __("Fragen", "blocksy"),
-            "singular_name" => __("Frage", "blocksy"),
+            "name" => __("Teilberichte", "blocksy"),
+            "singular_name" => __("Teilbericht", "blocksy"),
+            "archives" => __( "Fragen", "blocksy" ),
         ];
 
         $args = [
