@@ -15,6 +15,16 @@ jQuery(document).ready(()=>{
                      wp.data.dispatch('core/editor').editPost({'vintage':[value]});
 
                     wp.data.select('core/editor').getCurrentPost().vintage[0]=value;
+
+                    wp.apiFetch( { path: 'wp/v2/vintage/'+value } ).then( ( tax ) => {
+                        //console.log( tax.name );
+                        title = wp.data.select('core/editor').getCurrentPost().title.split(' : ');
+                        var start  = title.length-1;
+                        title.splice(start,1);
+                        title.push(tax.name);
+                        wp.data.dispatch('core/editor').editPost({'title':title.join(' : ')});
+                    } );
+
                  }
             });
 
