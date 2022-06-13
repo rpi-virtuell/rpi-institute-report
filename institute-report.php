@@ -30,6 +30,8 @@ class InstituteReport
 
 	    add_action( 'pre_get_posts', array($this, 'query_vintage') );
 		add_shortcode('go_to_last_post',  array($this, 'go_to_last_post'));
+
+	    add_action('enqueue_block_assets', array($this, 'blockeditor_js'));
     }
 
 
@@ -605,6 +607,19 @@ class InstituteReport
 
 		$post = reset($posts);
 		return '<a class="button" href="'.get_the_permalink($post).'">Beitrag anzeigen</a>';
+	}
+
+	function blockeditor_js()
+	{
+		if (!is_admin()) return;
+		wp_enqueue_script(
+			'custom_editor',
+			plugin_dir_url(__FILE__) . '/custom_editor.js',
+			array(),
+			'1.0',
+			true
+		);
+
 	}
 
 }
