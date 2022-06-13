@@ -480,6 +480,9 @@ class InstituteReport
             $institute = reset($terms);
             $terms = wp_get_post_terms($post_ID, 'vintage');
             $vintage = reset($terms);
+			if(!$vintage){
+				$vintage = get_term_by('slug', date('Y'), 'vintage');
+			}
 
 	        $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
 	        foreach ($report_section_ids as $report_section_id) {
