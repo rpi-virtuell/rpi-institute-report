@@ -4,16 +4,17 @@
     display:block;
 }
 .entry-card.rpi_report_section .report-parent-link{
-    text-align:right;
+    display: grid;
+    grid-template-columns: auto 90px;
     margin-top: -20px!important;
 }
-
+.entry-card.rpi_report_section .report-parent-link .vintage-card-link{
+    text-align: right;
+}
 .home .wp-block-post.rpi_report.type-rpi_report .wp-block-group{
     padding:0!important;
 }
-.ct-dynamic-filter[data-type="buttons"] a:first-child:after{
-    content:'e'
-}
+
 
 /* Manipulation der Printausgabe */
 @media print {
@@ -35,9 +36,7 @@
         display:none;
     }
     .entry-card.rpi_report_section .report-parent-link{
-        text-align:center;
-        margin-bottom:0!important;
-        margin-top:20px!important;
+
     }
     .entry-card.rpi_report_section .report-parent-link:before{
         content:'- '

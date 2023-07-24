@@ -23,6 +23,7 @@ class InstituteReport
         add_action('init', array($this, 'create_question_block'));
         add_action('gform_after_save_form', array($this, 'create_taxonomies_and_blocks'), 10, 2);
         add_action('gform_after_submission', array($this, 'create_report'), 10, 2);
+        add_action('blocksy:loop:before', array($this, 'display_questions'));
         add_action('blocksy:loop:before', array($this, 'add_vintage_select_boxes'));
         add_action('blocksy:loop:card:start', array($this, 'add_parent_report_link'));
         add_action('blocksy:single:content:bottom', array($this, 'add_editing_button_to_report_head'));
@@ -30,6 +31,7 @@ class InstituteReport
         add_action('trashed_post', array($this, 'delete_report_sections'), 10, 2);
 
         add_action('pre_get_posts', array($this, 'query_vintage'));
+        add_filter( 'get_terms',  array($this, 'filter_questions'), 10,4 );
         add_shortcode('go_to_last_post', array($this, 'go_to_last_post'));
 
         add_action('enqueue_block_assets', array($this, 'blockeditor_js'));
@@ -37,7 +39,65 @@ class InstituteReport
         add_action('wp_enqueue_scripts', array($this, 'frontpage_jquery'));
 
     }
+    public function get_question_terms(){
 
+
+            $search_args = array(
+                'post_type'      => 'rpi_report_section', // Der Beitragstyp, nach dem gesucht wird. Ändere dies gegebenenfalls, wenn du nach anderen Beitragstypen suchst.
+                'post_status'    => 'publish', // Nur veröffentlichte Beiträge abrufen
+                'tax_query'      => array(
+                    array(
+                        'taxonomy' => 'vintage', // Die gewünschte Taxonomie "vintage"
+                        'field'    => 'slug',    // Das Feld, nach dem gesucht wird (hier verwenden wir den Slug des Terms).
+                        'terms'    => get_query_var('vintage'),    // Der Term, nach dem gesucht wird (hier '2023').
+                    ),
+                ),
+                'fields'         => 'ids', // Wir wollen nur die Post-IDs zurückgeben.
+                'posts_per_page' => -1,   // Hier setzen wir -1, um alle passenden Beiträge zu erhalten.
+            );
+
+
+            $allowed_post_ids = get_posts($search_args);
+            $terms = [];
+
+            /*
+            foreach ($allowed_post_ids as $post_id){
+                $postterms = wp_get_post_terms($post_id, 'question', ['fields' => 'ids']);
+                $terms = array_merge($terms,$postterms);
+            }
+            */
+            $terms = get_terms(array(
+                'taxonomy'   => 'question',
+                'object_ids' =>$allowed_post_ids
+            ));
+            return $terms;
+
+    }
+
+    public function display_questions(){
+        if(is_tax()){
+            $active = ('' === get_query_var('question'))?'active ':'';
+            echo '<div class="ct-dynamic-filter " data-type="buttons"><a href="/rpi_report_section/" class="'.$active.'">Alle</a>';
+            foreach ($this->get_question_terms() as $term){
+                if(is_a($term,'WP_Term')){
+                    $active = ($term->slug === get_query_var('question'))?'active ':'';
+                    $url = home_url('question').'/'.$term->slug
+                    ?>
+                    <a href="<?php echo $url ;?>" class="<?php echo $active; ?>"><?php echo $term->name ;?></a>
+                    <?php
+                }
+
+            }
+            echo '</div>';
+        }
+
+
+    }
+
+    public function filter_questions($terms, $taxonomy, $query_vars, $term_query){
+
+        return $terms;
+    }
 
     /**
      * pre_get_posts  action
@@ -48,9 +108,24 @@ class InstituteReport
      */
     public function query_vintage(WP_Query $query)
     {
-        if (!is_admin() && $query->is_main_query() && !$query->get('vintage')) {
-            $query->set('vintage', date('Y'));
+        if (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
+            $query->set('post_type', 'rpi_report_section');
+            if(is_tax('vintage')){
+                $query->set('post_type', 'rpi_report');
+            }
+        }elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && 'year'===$_GET['current']) {
+                $query->set('vintage', date('Y'));
+        }else {
+            if (!is_admin() && $query->is_main_query()) {
+                if(is_tax('institute')){
+                    $query->set('post_type', 'rpi_report');
+                }
+                if(is_tax('question') && !get_query_var('vintage')){
+                    $query->set('vintage', date('Y'));
+                }
+            }
         }
+
     }
 
 
@@ -454,7 +529,7 @@ class InstituteReport
 
         if (get_post_type() === 'rpi_report_section') {
             echo '<div style="margin-bottom: 15px" class="vintage-filter">';
-            echo '<form action="" method="get" name="vintage-form" id="vintage">';
+            echo '<form action="/rpi_report_section/" method="get" name="vintage-form" id="vintage">';
             $vintages = get_terms(array('taxonomy' => 'vintage'));
             foreach ($vintages as $vintage)
                 if (is_a($vintage, 'WP_Term')) {
@@ -472,6 +547,7 @@ class InstituteReport
 
     public function add_parent_report_link()
     {
+
         if (get_post_type() === 'rpi_report_section') {
             $parent_id = get_post_meta(get_the_ID(), 'report_parent', true);
             $institutes = get_the_terms(get_the_ID(), 'institute');
@@ -479,9 +555,9 @@ class InstituteReport
             $vintages = get_the_terms(get_the_ID(), 'vintage');
             $vintage = reset($vintages);
             echo '<div class="report-parent-link" ><a href="' . get_the_permalink($parent_id) . '">' . $institute->name . '</a>';
-            if (isset($_GET['vintage'])) {
-                echo '<br><a href="?vintage=' . $vintage->slug . '">' . $vintage->slug . '</a>';
-            }
+            //if (get_query_var('vintage')) {
+                echo '<a class="vintage-card-link" href="?vintage=' . $vintage->slug . '">' . $vintage->slug . '</a>';
+            //}
             echo '</div>';
 
 
@@ -665,8 +741,14 @@ class InstituteReport
             'report_frontend',
             plugin_dir_url(__FILE__) . '/report_frontend.js',
             array(),
-            '1.0',
+            '1.1',
             true
+        );
+        wp_enqueue_style(
+            'report_frontend_style',
+            plugin_dir_url(__FILE__) . '/custom.css',
+            array(),
+            '1.1'
         );
     }
 

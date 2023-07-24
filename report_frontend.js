@@ -9,9 +9,16 @@ jQuery('#vintage').on("submit",(e)=>{
 });
 
 jQuery(document).ready(()=>{
-    urlParams = new URLSearchParams(window.location.search);
-    jears = urlParams.get('vintage').split(',');
-    for(const jear of jears){
-    jQuery('#'+jear).prop('checked', true);
-}
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.size>0 &&  urlParams.get('vintage')!==''){
+        const jears = urlParams.get('vintage').split(',');
+        for(const jear of jears){
+            jQuery('#'+jear).prop('checked', true);
+        }
+
+    }else{
+        const dateobj = new Date();
+        const year = dateobj.getFullYear();
+        jQuery('#'+year).prop('checked', true);
+    }
 });
