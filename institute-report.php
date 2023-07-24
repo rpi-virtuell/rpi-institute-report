@@ -41,7 +41,11 @@ class InstituteReport
     }
     public function get_question_terms(){
 
+        $vintage = get_query_var('vintage');
+        $trans_slug= is_array($vintage)?implode('_',$vintage):$vintage;
+        $trans_slug='question_terms_'.$trans_slug;
 
+        if(!$terms = get_transient($trans_slug)){
             $search_args = array(
                 'post_type'      => 'rpi_report_section', // Der Beitragstyp, nach dem gesucht wird. Ändere dies gegebenenfalls, wenn du nach anderen Beitragstypen suchst.
                 'post_status'    => 'publish', // Nur veröffentlichte Beiträge abrufen
@@ -58,30 +62,27 @@ class InstituteReport
 
 
             $allowed_post_ids = get_posts($search_args);
-            $terms = [];
 
-            /*
-            foreach ($allowed_post_ids as $post_id){
-                $postterms = wp_get_post_terms($post_id, 'question', ['fields' => 'ids']);
-                $terms = array_merge($terms,$postterms);
-            }
-            */
             $terms = get_terms(array(
                 'taxonomy'   => 'question',
                 'object_ids' =>$allowed_post_ids
             ));
-            return $terms;
+            set_transient($trans_slug,$terms, DAY_IN_SECONDS );
+        }
+
+        return $terms;
 
     }
 
     public function display_questions(){
         if(is_tax()){
             $active = ('' === get_query_var('question'))?'active ':'';
+
             echo '<div class="ct-dynamic-filter " data-type="buttons"><a href="/rpi_report_section/" class="'.$active.'">Alle</a>';
             foreach ($this->get_question_terms() as $term){
                 if(is_a($term,'WP_Term')){
                     $active = ($term->slug === get_query_var('question'))?'active ':'';
-                    $url = home_url('question').'/'.$term->slug
+                    $url = home_url('question').'/'.$term->slug.'?vintage='.get_query_var('vintage');
                     ?>
                     <a href="<?php echo $url ;?>" class="<?php echo $active; ?>"><?php echo $term->name ;?></a>
                     <?php

@@ -56,3 +56,18 @@
     }
 
 }
+
+[data-prefix="rpi_report_section_archive"] .ct-dynamic-filter ,.vintage-filter .button{
+    --items-horizontal-spacing: 0px;
+    --items-vertical-spacing: 3px;
+    --fontSize: 15px;
+    --container-spacing: 8px;
+    --filter-items-alignment: left;
+    --linkHoverColor: var(--paletteColor8);
+    --buttonInitialColor: var(--paletteColor5);
+    --buttonHoverColor: #ff6b00;
+    --padding: 1px 10px 3px 10px;
+    --border-radius: 5px;
+    --color: var(--paletteColor2);
+    display: inline-block;
+}
