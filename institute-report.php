@@ -112,16 +112,15 @@ class InstituteReport
     {
         if (is_author() || is_tax('institute')) {
             $query->set('post_type', ['rpi_report']);
-            //$query->set('vintage', false);
+            $query->set('vintage', false);
         }elseif (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
-
             $query->set('post_type', 'rpi_report_section');
             if(is_tax('vintage') && is_tax('question')){
                $query->set('post_type', 'rpi_report_section');
             }
-        }elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && 'year'===$_GET['current']) {
-                $query->set('vintage', date('Y'));
-        }elseif (!is_admin() &&  is_archive('rpi_report_section') &&  !get_query_var('vintage')) {
+        }elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && ''!==$_GET['current']) {
+            $query->set('vintage', $_GET['current']);
+        }elseif (!is_admin() &&  is_archive('rpi_report_section') && '/rpi_report/' !== $_SERVER['REQUEST_URI'] &&  !get_query_var('vintage')) {
                 $query->set('vintage', date('Y'));
         }else {
             if (!is_admin() && $query->is_main_query()) {
@@ -132,7 +131,9 @@ class InstituteReport
                     $query->set('vintage', date('Y'));
                 }
             }
+
         }
+
 
     }
 
