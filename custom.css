@@ -3,6 +3,9 @@
 .entry-card.rpi_report_section{
     display:block;
 }
+.entry-card.rpi_report_section .report-question{
+    font-weight: bold;
+}
 .entry-card.rpi_report_section .report-parent-link{
     display: grid;
     grid-template-columns: auto 90px;
@@ -14,7 +17,6 @@
 .home .wp-block-post.rpi_report.type-rpi_report .wp-block-group{
     padding:0!important;
 }
-
 
 /* Manipulation der Printausgabe */
 @media print {
@@ -62,7 +64,7 @@
     --items-vertical-spacing: 3px;
     --fontSize: 15px;
     --container-spacing: 8px;
-    --filter-items-alignment: left;
+    --filter-items-alignment: center;
     --linkHoverColor: var(--paletteColor8);
     --buttonInitialColor: var(--paletteColor5);
     --buttonHoverColor: #ff6b00;
@@ -70,4 +72,14 @@
     --border-radius: 5px;
     --color: var(--paletteColor2);
     display: inline-block;
+}
+.hero-section .ct-dynamic-filter[data-type="buttons"], .hero-section .vintage-filter{
+    margin: 0!important;
+}
+#vintage .button{
+    /*background-color: #ddd;*/
+    border: 1px solid #ff6b00;
+}
+#vintage .button:hover{
+    background-color: #ff6b00;
 }

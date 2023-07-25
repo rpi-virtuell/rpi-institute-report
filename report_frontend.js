@@ -8,7 +8,7 @@ jQuery('#vintage').on("submit",(e)=>{
     return false;
 });
 
-jQuery(document).ready(()=>{
+jQuery(document).ready(($)=>{
     const urlParams = new URLSearchParams(window.location.search);
     if(urlParams.size>0 &&  urlParams.get('vintage')!==''){
         const jears = urlParams.get('vintage').split(',');
@@ -21,4 +21,6 @@ jQuery(document).ready(()=>{
         const year = dateobj.getFullYear();
         jQuery('#'+year).prop('checked', true);
     }
+
+    $('#vintage input[type="checkbox"]').on('change', e=>{$('#vintage').submit()});
 });

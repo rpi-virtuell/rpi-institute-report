@@ -23,15 +23,18 @@ class InstituteReport
         add_action('init', array($this, 'create_question_block'));
         add_action('gform_after_save_form', array($this, 'create_taxonomies_and_blocks'), 10, 2);
         add_action('gform_after_submission', array($this, 'create_report'), 10, 2);
-        add_action('blocksy:loop:before', array($this, 'display_questions'));
-        add_action('blocksy:loop:before', array($this, 'add_vintage_select_boxes'));
+
+        //add_action('blocksy:loop:before', array($this, 'display_questions'));
+        //add_action('blocksy:loop:before', array($this, 'add_vintage_select_boxes'));
+        add_action('blocksy:hero:description:before', array($this, 'add_vintage_select_boxes'));
+        add_action('blocksy:hero:description:before', array($this, 'display_questions'));
+
         add_action('blocksy:loop:card:start', array($this, 'add_parent_report_link'));
         add_action('blocksy:single:content:bottom', array($this, 'add_editing_button_to_report_head'));
         add_action('save_post_rpi_report', array($this, 'update_report_sections_with_parent'), 10, 3);
         add_action('trashed_post', array($this, 'delete_report_sections'), 10, 2);
 
         add_action('pre_get_posts', array($this, 'query_vintage'));
-        add_filter( 'get_terms',  array($this, 'filter_questions'), 10,4 );
         add_shortcode('go_to_last_post', array($this, 'go_to_last_post'));
 
         add_action('enqueue_block_assets', array($this, 'blockeditor_js'));
@@ -45,7 +48,7 @@ class InstituteReport
         $trans_slug= is_array($vintage)?implode('_',$vintage):$vintage;
         $trans_slug='question_terms_'.$trans_slug;
 
-        if(!$terms = get_transient($trans_slug)){
+        if(true || !$terms = get_transient($trans_slug)){
             $search_args = array(
                 'post_type'      => 'rpi_report_section', // Der Beitragstyp, nach dem gesucht wird. Ändere dies gegebenenfalls, wenn du nach anderen Beitragstypen suchst.
                 'post_status'    => 'publish', // Nur veröffentlichte Beiträge abrufen
@@ -75,7 +78,7 @@ class InstituteReport
     }
 
     public function display_questions(){
-        if(is_tax()){
+        if( get_post_type() === 'rpi_report_section'){
             $active = ('' === get_query_var('question'))?'active ':'';
 
             echo '<div class="ct-dynamic-filter " data-type="buttons"><a href="/rpi_report_section/" class="'.$active.'">Alle</a>';
@@ -95,10 +98,6 @@ class InstituteReport
 
     }
 
-    public function filter_questions($terms, $taxonomy, $query_vars, $term_query){
-
-        return $terms;
-    }
 
     /**
      * pre_get_posts  action
@@ -109,12 +108,18 @@ class InstituteReport
      */
     public function query_vintage(WP_Query $query)
     {
-        if (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
+        if (is_author() || is_tax('institute')) {
+            $query->set('post_type', ['rpi_report']);
+            //$query->set('vintage', false);
+        }elseif (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
+
             $query->set('post_type', 'rpi_report_section');
-            if(is_tax('vintage')){
-                $query->set('post_type', 'rpi_report');
+            if(is_tax('vintage') && is_tax('question')){
+               $query->set('post_type', 'rpi_report_section');
             }
         }elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && 'year'===$_GET['current']) {
+                $query->set('vintage', date('Y'));
+        }elseif (!is_admin() &&  is_archive('rpi_report_section') &&  !get_query_var('vintage')) {
                 $query->set('vintage', date('Y'));
         }else {
             if (!is_admin() && $query->is_main_query()) {
@@ -539,7 +544,7 @@ class InstituteReport
                     echo '<label style="margin: 0 0 0 5px" " for="' . $vintage->slug . '"> Jahrgang ' . $vintage->slug . '</label><br>';
                     echo '</div>';
                 }
-            echo '<input type="submit" id="vintage-button" style="margin: 5px" value="Vergleichen" class="button">';
+            //echo '<input type="submit" id="vintage-button" style="margin: 5px" value="Vergleichen" class="button">';
             echo '</form>';
             echo '</div>';
         }
@@ -555,11 +560,17 @@ class InstituteReport
             $institute = reset($institutes);
             $vintages = get_the_terms(get_the_ID(), 'vintage');
             $vintage = reset($vintages);
-            echo '<div class="report-parent-link" ><a href="' . get_the_permalink($parent_id) . '">' . $institute->name . '</a>';
-            //if (get_query_var('vintage')) {
-                echo '<a class="vintage-card-link" href="?vintage=' . $vintage->slug . '">' . $vintage->slug . '</a>';
-            //}
+
+            if(!get_query_var('question')){
+                echo '<div class="report-question">';
+                echo implode(', ',wp_get_post_terms(get_the_ID(),'question',["fields"=>"names"]));
+                echo '</div>';
+            }
+            echo '<div class="report-parent-link" >';
+            echo '<a href="' . get_the_permalink($parent_id) . '">' . $institute->name . '</a>';
+            echo '<a class="vintage-card-link" href="?vintage=' . $vintage->slug . '">' . $vintage->slug . '</a>';
             echo '</div>';
+
 
 
         }
