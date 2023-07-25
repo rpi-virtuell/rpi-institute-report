@@ -4,10 +4,12 @@
 Plugin Name: rpi Insitute Report
 Plugin URI: https://github.com/rpi-virtuell/rpi-institute-report
 Description: Wordpress Plugin to handle institute reports
-Version: 1.0
+Version: 1.2
 Author: Daniel Reintanz
 Author URI: https://github.com/FreelancerAMP
 License: A "Slug" license name e.g. GPL2
+Requires at least: 6.0
+Requires PHP:      8.1
 */
 
 class InstituteReport
@@ -741,7 +743,7 @@ class InstituteReport
             'custom_editor',
             plugin_dir_url(__FILE__) . '/custom_editor.js',
             array(),
-            '1.0',
+            '1.2',
             true
         );
 
@@ -753,14 +755,14 @@ class InstituteReport
             'report_frontend',
             plugin_dir_url(__FILE__) . '/report_frontend.js',
             array(),
-            '1.1',
+            '1.2',
             true
         );
         wp_enqueue_style(
             'report_frontend_style',
             plugin_dir_url(__FILE__) . '/custom.css',
             array(),
-            '1.1'
+            '1.2'
         );
     }
 
