@@ -1,6 +1,6 @@
 # ALPIKA Leiter Berichte
 
-Berichte der werden mit Hilfe eines Gravity Formulars eingegeben. Bei Speichern der Eingabe wird das Ergebnis 
+Berichte aus den Instituten werden mit Hilfe eines Gravity Formulars eingegeben. Bei Speichern der Eingabe wird das Ergebnis 
 als Beitrog unter dem post_type "rpi_report" gespeichert Zusätzlich werden die einzelnen Antworten separat in weiteren
 Beiträgen des Post Types Teilberichte ("rpi_report_section") gespeichert. 
 Die dazugehörige Taxonomie Fragen ("question") ermöglicht die Zuordnung von Fragen zu Teilberichten.
