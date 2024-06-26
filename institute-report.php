@@ -4,7 +4,7 @@
 Plugin Name: rpi Insitute Report
 Plugin URI: https://github.com/rpi-virtuell/rpi-institute-report
 Description: Wordpress Plugin to handle institute reports
-Version: 1.2
+Version: 1.3
 Author: Daniel Reintanz
 Author URI: https://github.com/FreelancerAMP
 License: A "Slug" license name e.g. GPL2
@@ -44,24 +44,56 @@ class InstituteReport
         add_action('wp_enqueue_scripts', array($this, 'frontpage_jquery'));
 
     }
-    public function get_question_terms(){
+
+    public function display_questions()
+    {
+        ob_start();
+
+        if (is_post_type_archive('rpi_report_section')) {
+            $active = ('' === get_query_var('question')) ? 'active ' : '';
+
+            ?>
+            <div class="ct-dynamic-filter " data-type="buttons"><a href="/rpi_report_section/"
+                                                                   class="<?php echo $active ?>">Alle</a>
+                <?php
+                foreach ($this->get_question_terms() as $term) {
+                    if (is_a($term, 'WP_Term')) {
+                        $active = ($term->slug === get_query_var('question')) ? 'active ' : '';
+                        $url = home_url('question') . '/' . $term->slug . '?vintage=' . get_query_var('vintage');
+                        ?>
+                        <a href="<?php echo $url ?>" class="<?php echo $active ?>"><?php echo $term->name ?></a>
+                        <?php
+                    }
+
+                }
+                ?>
+            </div>
+            <?php
+        }
+        echo ob_get_clean();
+
+
+    }
+
+    public function get_question_terms()
+    {
 
         $vintage = get_query_var('vintage');
-        $trans_slug= is_array($vintage)?implode('_',$vintage):$vintage;
-        $trans_slug='question_terms_'.$trans_slug;
+        $trans_slug = is_array($vintage) ? implode('_', $vintage) : $vintage;
+        $trans_slug = 'question_terms_' . $trans_slug;
 
-        if(true || !$terms = get_transient($trans_slug)){
+        if (true || !$terms = get_transient($trans_slug)) {
             $search_args = array(
-                'post_type'      => 'rpi_report_section', // Der Beitragstyp, nach dem gesucht wird. Ändere dies gegebenenfalls, wenn du nach anderen Beitragstypen suchst.
-                'post_status'    => 'publish', // Nur veröffentlichte Beiträge abrufen
-                'tax_query'      => array(
+                'post_type' => 'rpi_report_section', // Der Beitragstyp, nach dem gesucht wird. Ändere dies gegebenenfalls, wenn du nach anderen Beitragstypen suchst.
+                'post_status' => 'publish', // Nur veröffentlichte Beiträge abrufen
+                'tax_query' => array(
                     array(
                         'taxonomy' => 'vintage', // Die gewünschte Taxonomie "vintage"
-                        'field'    => 'slug',    // Das Feld, nach dem gesucht wird (hier verwenden wir den Slug des Terms).
-                        'terms'    => get_query_var('vintage'),    // Der Term, nach dem gesucht wird (hier '2023').
+                        'field' => 'slug',    // Das Feld, nach dem gesucht wird (hier verwenden wir den Slug des Terms).
+                        'terms' => get_query_var('vintage'),    // Der Term, nach dem gesucht wird (hier '2023').
                     ),
                 ),
-                'fields'         => 'ids', // Wir wollen nur die Post-IDs zurückgeben.
+                'fields' => 'ids', // Wir wollen nur die Post-IDs zurückgeben.
                 'posts_per_page' => -1,   // Hier setzen wir -1, um alle passenden Beiträge zu erhalten.
             );
 
@@ -69,37 +101,15 @@ class InstituteReport
             $allowed_post_ids = get_posts($search_args);
 
             $terms = get_terms(array(
-                'taxonomy'   => 'question',
-                'object_ids' =>$allowed_post_ids
+                'taxonomy' => 'question',
+                'object_ids' => $allowed_post_ids
             ));
-            set_transient($trans_slug,$terms, DAY_IN_SECONDS );
+            set_transient($trans_slug, $terms, DAY_IN_SECONDS);
         }
 
         return $terms;
 
     }
-
-    public function display_questions(){
-        if( get_post_type() === 'rpi_report_section'){
-            $active = ('' === get_query_var('question'))?'active ':'';
-
-            echo '<div class="ct-dynamic-filter " data-type="buttons"><a href="/rpi_report_section/" class="'.$active.'">Alle</a>';
-            foreach ($this->get_question_terms() as $term){
-                if(is_a($term,'WP_Term')){
-                    $active = ($term->slug === get_query_var('question'))?'active ':'';
-                    $url = home_url('question').'/'.$term->slug.'?vintage='.get_query_var('vintage');
-                    ?>
-                    <a href="<?php echo $url ;?>" class="<?php echo $active; ?>"><?php echo $term->name ;?></a>
-                    <?php
-                }
-
-            }
-            echo '</div>';
-        }
-
-
-    }
-
 
     /**
      * pre_get_posts  action
@@ -113,21 +123,21 @@ class InstituteReport
         if (is_author() || is_tax('institute')) {
             $query->set('post_type', ['rpi_report']);
             $query->set('vintage', false);
-        }elseif (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
+        } elseif (!is_admin() && $query->is_main_query() && get_query_var('vintage')) {
             $query->set('post_type', 'rpi_report_section');
-            if(is_tax('vintage') && is_tax('question')){
-               $query->set('post_type', 'rpi_report_section');
+            if (is_tax('vintage') && is_tax('question')) {
+                $query->set('post_type', 'rpi_report_section');
             }
-        }elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && ''!==$_GET['current']) {
+        } elseif (!is_admin() && $query->is_main_query() && !get_query_var('vintage') && isset($_GET['current']) && '' !== $_GET['current']) {
             $query->set('vintage', $_GET['current']);
-        }elseif (!is_admin() &&  is_archive('rpi_report_section') && '/rpi_report/' !== $_SERVER['REQUEST_URI'] &&  !get_query_var('vintage')) {
-                $query->set('vintage', date('Y'));
-        }else {
+        } elseif (!is_admin() && is_archive('rpi_report_section') && '/rpi_report/' !== $_SERVER['REQUEST_URI'] && !get_query_var('vintage')) {
+            $query->set('vintage', date('Y'));
+        } else {
             if (!is_admin() && $query->is_main_query()) {
-                if(is_tax('institute')){
+                if (is_tax('institute')) {
                     $query->set('post_type', 'rpi_report');
                 }
-                if(is_tax('question') && !get_query_var('vintage')){
+                if (is_tax('question') && !get_query_var('vintage')) {
                     $query->set('vintage', date('Y'));
                 }
             }
@@ -535,21 +545,43 @@ class InstituteReport
 
     public function add_vintage_select_boxes()
     {
+        ob_start();
+        if (is_post_type_archive('rpi_report_section')) {
+            ?>
+            <div style="margin-bottom: 15px" class="vintage-filter">
+                <form action="/rpi_report_section/" method="get" name="vintage-form" id="vintage">
+                    <?php
+                    $vintages = get_terms(array('taxonomy' => 'vintage'));
+                    foreach ($vintages as $vintage)
+                        if (is_a($vintage, 'WP_Term')) {
 
-        if (get_post_type() === 'rpi_report_section') {
-            echo '<div style="margin-bottom: 15px" class="vintage-filter">';
-            echo '<form action="/rpi_report_section/" method="get" name="vintage-form" id="vintage">';
-            $vintages = get_terms(array('taxonomy' => 'vintage'));
-            foreach ($vintages as $vintage)
-                if (is_a($vintage, 'WP_Term')) {
-                    echo '<div style="margin: 5px" class="button">';
-                    echo '<input type="checkbox" id="' . $vintage->slug . '" name="vintage" value="' . $vintage->slug . '">';
-                    echo '<label style="margin: 0 0 0 5px" " for="' . $vintage->slug . '"> Jahrgang ' . $vintage->slug . '</label><br>';
-                    echo '</div>';
-                }
-            //echo '<input type="submit" id="vintage-button" style="margin: 5px" value="Vergleichen" class="button">';
-            echo '</form>';
-            echo '</div>';
+                            $active = false;
+
+                            $get_string = str_contains( $_GET['vintage'],',') ? explode(',', $_GET['vintage']) : [$_GET['vintage']];
+                            if (in_array($vintage->slug, $get_string)) {
+                                $active = true;
+                            }
+                            ?>
+
+                            <div style="margin: 5px" class="button <?php echo $active ? 'active' : '' ?> ">
+                                <input <?php echo $active ? 'checked' : '' ?>
+                                        type="checkbox" id="<?php echo $vintage->slug ?>" name="vintage"
+                                        value="<?php echo $vintage->slug ?>">
+                                <label
+                                        style="margin: 0 0 0 5px"
+                                        for="<?php echo $vintage->slug ?>">
+
+
+                                    Jahrgang <?php echo $vintage->slug ?> </label><br>
+                            </div>
+                            <?php
+                        }
+                    //echo '<input type="submit" id="vintage-button" style="margin: 5px" value="Vergleichen" class="button">';
+                    ?>
+                </form>
+            </div>
+            <?php
+            echo ob_get_clean();
         }
     }
 
@@ -564,16 +596,15 @@ class InstituteReport
             $vintages = get_the_terms(get_the_ID(), 'vintage');
             $vintage = reset($vintages);
 
-            if(!get_query_var('question')){
+            if (!get_query_var('question')) {
                 echo '<div class="report-question">';
-                echo implode(', ',wp_get_post_terms(get_the_ID(),'question',["fields"=>"names"]));
+                echo implode(', ', wp_get_post_terms(get_the_ID(), 'question', ["fields" => "names"]));
                 echo '</div>';
             }
             echo '<div class="report-parent-link" >';
             echo '<a href="' . get_the_permalink($parent_id) . '">' . $institute->name . '</a>';
             echo '<a class="vintage-card-link" href="?vintage=' . $vintage->slug . '">' . $vintage->slug . '</a>';
             echo '</div>';
-
 
 
         }
@@ -664,27 +695,6 @@ class InstituteReport
     }
 
     /**
-     * trashed_post action
-     * löscht alle Teilberichte, wenn der Bericht gelöscht wird
-     *
-     * @param $post_ID
-     * @param WP_Post $post
-     *
-     * @return void
-     */
-    public function delete_report_sections($post_ID)
-    {
-
-        if ('rpi_report' == get_post_type($post_ID)) {
-
-            $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
-            foreach ($report_section_ids as $report_section_id) {
-                wp_delete_post($report_section_id, true);
-            }
-        }
-    }
-
-    /**
      * Schreibt Frage und Antwort in einen den Post_Type rpi_report_section
      *
      * @param WP_Post $report //Bericht
@@ -715,6 +725,27 @@ class InstituteReport
             }
         }
         return $report_part_id;
+    }
+
+    /**
+     * trashed_post action
+     * löscht alle Teilberichte, wenn der Bericht gelöscht wird
+     *
+     * @param $post_ID
+     * @param WP_Post $post
+     *
+     * @return void
+     */
+    public function delete_report_sections($post_ID)
+    {
+
+        if ('rpi_report' == get_post_type($post_ID)) {
+
+            $report_section_ids = get_post_meta($post_ID, 'report_parts', true);
+            foreach ($report_section_ids as $report_section_id) {
+                wp_delete_post($report_section_id, true);
+            }
+        }
     }
 
     /**

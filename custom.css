@@ -1,85 +1,116 @@
 /* Zusätzliches CSS für Blocksy Customizer */
 
-.entry-card.rpi_report_section{
-    display:block;
+.entry-card.rpi_report_section {
+    display: block;
 }
-.entry-card.rpi_report_section .report-question{
+
+.entry-card.rpi_report_section .report-question {
     font-weight: bold;
 }
-.entry-card.rpi_report_section .report-parent-link{
+
+.entry-card.rpi_report_section .report-parent-link {
     display: grid;
     grid-template-columns: auto 90px;
-    margin-top: -20px!important;
+    margin-top: -20px !important;
 }
-.entry-card.rpi_report_section .report-parent-link .vintage-card-link{
+
+.entry-card.rpi_report_section .report-parent-link .vintage-card-link {
     text-align: right;
 }
-.home .wp-block-post.rpi_report.type-rpi_report .wp-block-group{
-    padding:0!important;
+
+.home .wp-block-post.rpi_report.type-rpi_report .wp-block-group {
+    padding: 0 !important;
 }
 
 /* Manipulation der Printausgabe */
 @media print {
-    .ct-dynamic-filter,.ct-breadcrumbs,#header{
-        display:none;
+    .ct-dynamic-filter, .ct-breadcrumbs, #header {
+        display: none;
     }
-    [data-layout*="grid"]{
-        display:block;
+
+    [data-layout*="grid"] {
+        display: block;
     }
-    .entry-card{
-        box-shadow:none!important;
-        padding:0!important;
+
+    .entry-card {
+        box-shadow: none !important;
+        padding: 0 !important;
     }
-    .entry-header .page-description{
-        font-size:20px!important;
-        line-height:25px;
+
+    .entry-header .page-description {
+        font-size: 20px !important;
+        line-height: 25px;
     }
-    .post-type-archive-rpi_report .entry-header .page-description{
-        display:none;
+
+    .post-type-archive-rpi_report .entry-header .page-description {
+        display: none;
     }
-    .entry-card.rpi_report_section .report-parent-link{
+
+    .entry-card.rpi_report_section .report-parent-link {
 
     }
-    .entry-card.rpi_report_section .report-parent-link:before{
-        content:'- '
+
+    .entry-card.rpi_report_section .report-parent-link:before {
+        content: '- '
     }
-    .entry-card.rpi_report_section .report-parent-link:after{
-        content:'- '
+
+    .entry-card.rpi_report_section .report-parent-link:after {
+        content: '- '
     }
-    article>.entry-content {
-        max-width:100%!important;
-        width:100%!important;
+
+    article > .entry-content {
+        max-width: 100% !important;
+        width: 100% !important;
     }
-    [data-vertical-spacing*="top"],[data-vertical-spacing*="bottom"]{
-        padding:0!important;
+
+    [data-vertical-spacing*="top"], [data-vertical-spacing*="bottom"] {
+        padding: 0 !important;
     }
-    article>.entry-content {
+
+    article > .entry-content {
         page-break-before: always;
     }
 
 }
 
-[data-prefix="rpi_report_section_archive"] .ct-dynamic-filter ,.vintage-filter .button{
+[data-prefix="rpi_report_section_archive"] .ct-dynamic-filter a, .vintage-filter .button {
     --items-horizontal-spacing: 0px;
     --items-vertical-spacing: 3px;
     --fontSize: 15px;
     --container-spacing: 8px;
     --filter-items-alignment: center;
-    --linkHoverColor: var(--paletteColor8);
-    --buttonInitialColor: var(--paletteColor5);
+    --linkHoverColor: var(--theme-palette-color-8);
+    --buttonInitialColor: var(--theme-palette-color-5);
     --buttonHoverColor: #ff6b00;
-    --padding: 1px 10px 3px 10px;
-    --border-radius: 5px;
-    --color: var(--paletteColor2);
+    border-radius: 5px;
+    color: var(--theme-palette-color-2);
     display: inline-block;
-}
-.hero-section .ct-dynamic-filter[data-type="buttons"], .hero-section .vintage-filter{
-    margin: 0!important;
-}
-#vintage .button{
-    /*background-color: #ddd;*/
     border: 1px solid #ff6b00;
+    font-weight: bold;
+    margin: 0 2px;
+
+
 }
-#vintage .button:hover{
+
+.hero-section .ct-dynamic-filter[data-type="buttons"], .hero-section .vintage-filter {
+    margin: 0 !important;
+}
+
+.hero-section .ct-dynamic-filter[data-type="buttons"] a:hover {
+    color: white;
+}
+
+#vintage .button.active {
+    background-color: #ff6b00;
+    color: white;
+}
+
+
+#vintage .button input {
+    display: none;
+}
+
+
+#vintage .button:hover {
     background-color: #ff6b00;
 }
