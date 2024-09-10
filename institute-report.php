@@ -509,7 +509,11 @@ class InstituteReport
 
         $content = '';
         $institute = get_term_by('id', $entry[23], 'institute');
+        if (!term_exists(date('Y'), 'vintage')) {
+            wp_insert_term(date('Y'), 'vintage');
+        }
         $vintage = get_term_by('name', date('Y'), 'vintage');
+
         if (!empty($institute) && !is_wp_error($institute)) {
             $institute_name = $institute->name;
         } else {
@@ -557,10 +561,14 @@ class InstituteReport
 
                             $active = false;
 
-                            $get_string = str_contains( $_GET['vintage'],',') ? explode(',', $_GET['vintage']) : [$_GET['vintage']];
-                            if (in_array($vintage->slug, $get_string)) {
-                                $active = true;
+                            if (key_exists('vintage', $_GET))
+                            {
+                                $get_string = str_contains($_GET['vintage'], ',') ? explode(',', $_GET['vintage']) : [$_GET['vintage']];
+                                if (in_array($vintage->slug, $get_string)) {
+                                    $active = true;
+                                }
                             }
+
                             ?>
 
                             <div style="margin: 5px" class="button <?php echo $active ? 'active' : '' ?> ">
