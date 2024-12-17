@@ -87,8 +87,8 @@
     display: inline-block;
     border: 1px solid #ff6b00;
     font-weight: bold;
-    margin: 0 2px;
-
+    margin: 2px;
+    padding: 5px;
 
 }
 
@@ -96,9 +96,6 @@
     margin: 0 !important;
 }
 
-.hero-section .ct-dynamic-filter[data-type="buttons"] a:hover {
-    color: white;
-}
 
 #vintage .button.active {
     background-color: #ff6b00;
@@ -111,6 +108,7 @@
 }
 
 
-#vintage .button:hover {
+#vintage .button:hover, .hero-section .ct-dynamic-filter[data-type="buttons"] a:hover {
     background-color: #ff6b00;
+    color: white;
 }

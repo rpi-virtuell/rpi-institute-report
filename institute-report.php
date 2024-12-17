@@ -43,6 +43,8 @@ class InstituteReport
         add_action('wp_enqueue_scripts', array($this, 'report_frontend_js'));
         add_action('wp_enqueue_scripts', array($this, 'frontpage_jquery'));
 
+        add_shortcode('display_rpi_institute_report_button', array($this, 'display_rpi_institute_report_button'));
+
     }
 
     public function display_questions()
@@ -561,14 +563,12 @@ class InstituteReport
 
                             $active = false;
 
-                            if (key_exists('vintage', $_GET))
-                            {
+                            if (key_exists('vintage', $_GET)) {
                                 $get_string = str_contains($_GET['vintage'], ',') ? explode(',', $_GET['vintage']) : [$_GET['vintage']];
                                 if (in_array($vintage->slug, $get_string)) {
                                     $active = true;
                                 }
                             }
-
                             ?>
 
                             <div style="margin: 5px" class="button <?php echo $active ? 'active' : '' ?> ">
@@ -809,6 +809,25 @@ class InstituteReport
     function frontpage_jquery()
     {
         wp_enqueue_script('jquery');
+    }
+
+    function display_rpi_institute_report_button()
+    {
+        ob_start();
+        $search_year = date('Y');
+        $reports = get_posts([
+            'post_type' => 'rpi_report',
+            'post_status' => 'publish',
+            'vintage' => $search_year,
+        ]);
+        if (count($reports) > 0) {
+            $search_year = $search_year - 1;
+        }
+        ?>
+        <a class="button" href="<?php echo home_url() . '/rpi_report/?current=' . $search_year ?>">Aktuelle Berichte ansehen</a>
+        <?php
+        echo ob_get_clean();
+
     }
 
 }
